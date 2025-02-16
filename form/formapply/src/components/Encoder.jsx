@@ -5,7 +5,6 @@ export default function encodeBase64(text) {
     
     // Encode to Base64
     let encoded = btoa(saltedText);
-    console.log(encoded.replace(/=+$/, ''));
     // Remove '=' padding
     return encoded.replace(/=+$/, '');
 }

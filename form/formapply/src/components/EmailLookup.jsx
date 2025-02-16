@@ -5,6 +5,8 @@ import EmailInput from "./EmailInput";
 import encodeBase64 from "./Encoder";
 import splitStringToJson from "./splitter";
 import QRTicketGenerator from "./Ticket";
+import mergeJsonToString from "./ReverseSplitter"; 
+import decodeBase64 from "./Decoder";
 
 
 const EmailLookup = () => {
@@ -38,6 +40,10 @@ const EmailLookup = () => {
     const encodedResult1 = encodeBase64(responseData);
     const encodedResult2 = encodeBase64(encodedResult1);
     const jsonsplit = splitStringToJson(encodedResult2);
+    const mergedResult = mergeJsonToString(jsonsplit);
+    const decodedResult1 = decodeBase64(mergedResult);
+    const decodedResult2 = decodeBase64(decodedResult1);
+
 
     return (
         <div style={{ textAlign: "center", marginTop: "50px" }}>
@@ -46,7 +52,7 @@ const EmailLookup = () => {
             <ResponseDisplay responseData={responseData} />
 
             {/* Generate QR Code and store image */}
-            <QRCodeGenerator data={jsonsplit} setQrImage={setQrImage} />
+            <QRCodeGenerator data={decodedResult2} setQrImage={setQrImage} />
 
             {/* Pass the QR code to the ticket generator */}
             {qrImage && <QRTicketGenerator qrImage={qrImage} />}

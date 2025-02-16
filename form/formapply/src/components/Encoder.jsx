@@ -1,6 +1,11 @@
 export default function encodeBase64(text) {
-    const salt = "086724@2025synntaxical"; // Fixed salt
+    const salt = "scece@2025"; // Fixed salt
     const textString = typeof text === 'string' ? text : JSON.stringify(text);
-    const saltedText = salt + textString; 
-    return btoa(saltedText);
+    const saltedText = salt + textString;
+    
+    // Encode to Base64
+    let encoded = btoa(saltedText);
+    console.log(encoded.replace(/=+$/, ''));
+    // Remove '=' padding
+    return encoded.replace(/=+$/, '');
 }

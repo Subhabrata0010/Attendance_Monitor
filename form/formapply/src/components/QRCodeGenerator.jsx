@@ -1,22 +1,28 @@
 import React, { useEffect, useRef, useState } from "react";
 import QRCodeStyling from "qr-code-styling";
-import jsPDF from "jspdf";
+import QRTicketGenerator from "./Ticket";
 
-const qrSize = 180; // Adjust QR size
-const qrPositionX = 751; // Adjust position on ticket
-const qrPositionY = 74; // Adjust position on ticket
+const qrColorType = "solid";
+const bgColorType = "gradient";
+const qrColor = "#000000";
+const bgColor = "#FFFFFF";
+const gradStartColor = "#000000";
+const gradEndColor = "#000000";
+const gradientType = "linear";
+const qrSize = 400;
+const dotStyle = "dots";
+const cornerSquareStyle = "extra-rounded";
+const cornerDotStyle = "extra-rounded";
+const bgGradStart = "#FF00FF";
+const bgGradEnd = "#FFFF00";
 
-const QRCodeGenerator = ({ data }) => {
-    const qrCanvasRef = useRef(null);
-    const ticketCanvasRef = useRef(null);
+const QRCodeGenerator = ({ data, setQrImage }) => {
+    const qrCodeContainer = useRef(null);
     const [qrCode, setQrCode] = useState(null);
-    const [qrGenerated, setQrGenerated] = useState(false);
-    const [ticketReady, setTicketReady] = useState(false);
-
-    const qrOptions = {
+    const [options, setOptions] = useState({
         width: qrSize,
         height: qrSize,
-        data: data || "",
+        data: "",
         image: "/icon.png", // ✅ Add your image here (Make sure it's in /public/)
         imageOptions: { 
             crossOrigin: "anonymous", 
@@ -24,129 +30,83 @@ const QRCodeGenerator = ({ data }) => {
             imageSize: 0.3 // ✅ Adjust image size (0.0 - 1.0)
         },
         dotsOptions: {
-            type: "dots",
-            gradient: {
-                type: "linear",
+            type: dotStyle,
+            gradient: qrColorType === "gradient" ? {
+                type: gradientType,
                 colorStops: [
-                    { offset: 0, color: "#000000" },
-                    { offset: 1, color: "#4A90E2" }
+                    { offset: 0, color: gradStartColor },
+                    { offset: 1, color: gradEndColor }
                 ]
-            }
+            } : null,
+            color: qrColorType === "solid" ? qrColor : null
         },
-        backgroundOptions: { color: "white" }, // ✅ Removes white background
-        cornersSquareOptions: { type: "extra-rounded", color: "#000000" },
-        cornersDotOptions: { type: "extra-rounded", color: "#4A90E2" },
-        qrOptions: { errorCorrectionLevel: "H" }
-    };
+        backgroundOptions: {
+            gradient: bgColorType === "gradient" ? {
+                type: gradientType,
+                colorStops: [
+                    { offset: 0, color: bgGradStart },
+                    { offset: 1, color: bgGradEnd }
+                ]
+            } : null,
+            color: bgColorType === "solid" ? bgColor : null
+        },
+        cornersSquareOptions: { type: cornerSquareStyle, color: gradStartColor },
+        cornersDotOptions: { type: cornerDotStyle, color: gradEndColor },
+        imageOptions: { crossOrigin: "anonymous", margin: 10 },
+        qrOptions: { errorCorrectionLevel: "H" },
+    });
 
     useEffect(() => {
         if (!qrCode) {
-            const newQrCode = new QRCodeStyling(qrOptions);
-            setQrCode(newQrCode);
+            setQrCode(new QRCodeStyling(options));
         }
     }, []);
 
     useEffect(() => {
         if (qrCode && data) {
-            qrCode.update({ data: JSON.stringify(data) });
-            qrCode.append(qrCanvasRef.current);
-            setQrGenerated(true);
+            setOptions((prev) => ({ ...prev, data: JSON.stringify(data) }));
+            qrCode.update({ ...options, data: JSON.stringify(data) });
+            qrCode.append(qrCodeContainer.current);
+
+            // Generate QR as base64 image and pass it to parent
+            qrCode.getRawData("png").then((blob) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    if (setQrImage) {
+                        setQrImage(reader.result); // Set the base64 image in state
+                    }
+                };
+                reader.readAsDataURL(blob);
+            });
         }
     }, [data, qrCode]);
 
-    const drawTicketWithQR = async () => {
-        if (!qrGenerated) {
-            alert("Please generate the QR code first!");
-            return;
-        }
-
-        const canvas = ticketCanvasRef.current;
-        if (!canvas) {
-            alert("Canvas not ready yet. Try again.");
-            return;
-        }
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-            alert("Failed to get canvas context!");
-            return;
-        }
-
-        // Load the ticket image
-        const ticketImg = new Image();
-        ticketImg.src = "/ticket.png"; // Ensure ticket image is inside /public
-        ticketImg.crossOrigin = "anonymous";
-
-        ticketImg.onload = async () => {
-            canvas.width = ticketImg.width;
-            canvas.height = ticketImg.height;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw ticket background
-            ctx.drawImage(ticketImg, 0, 0, canvas.width, canvas.height);
-
-            // Get QR code as an image
-            const qrBlob = await qrCode.getRawData("png");
-            if (!qrBlob) {
-                alert("QR code failed to generate.");
-                return;
-            }
-
-            const qrImg = new Image();
-            qrImg.src = URL.createObjectURL(qrBlob);
-            qrImg.crossOrigin = "anonymous";
-
-            qrImg.onload = () => {
-                ctx.drawImage(qrImg, qrPositionX, qrPositionY, qrSize, qrSize);
-                URL.revokeObjectURL(qrImg.src);
-                setTicketReady(true);
-            };
-
-            qrImg.onerror = () => alert("QR image failed to load.");
-        };
-
-        ticketImg.onerror = () => alert("Ticket image failed to load. Ensure it's inside `/public/`.");
-    };
-
-    const downloadTicket = (format) => {
-        if (!ticketReady) {
-            alert("Please generate the ticket first!");
-            return;
-        }
-
-        const canvas = ticketCanvasRef.current;
-        if (format === "png" || format === "jpg") {
-            const link = document.createElement("a");
-            link.download = `ticket.${format}`;
-            link.href = canvas.toDataURL(`image/${format}`);
-            link.click();
-        } else if (format === "pdf") {
-            const pdf = new jsPDF();
-            const imgData = canvas.toDataURL("image/png");
-            pdf.addImage(imgData, "PNG", 10, 10, 180, 100); // Adjust size
-            pdf.save("ticket.pdf");
+    const downloadQR = (format) => {
+        if (qrCode) {
+            qrCode.download({ name: "qr_code", extension: format });
+        } else {
+            alert("Please generate a QR code first!");
         }
     };
 
     return (
         <div style={{ textAlign: "center", padding: "20px" }}>
             <h3>Generated QR Code:</h3>
-            <div ref={qrCanvasRef} style={{ margin: "10px auto", padding: "10px" }}></div>
-
-            <button onClick={drawTicketWithQR}>Generate Ticket with QR</button>
-
-            <canvas ref={ticketCanvasRef} style={{ display: "none" }}></canvas> {/* Keep hidden until needed */}
-
-            {ticketReady && (
-                <>
-                    <h3>Final Ticket:</h3>
-                    <canvas ref={ticketCanvasRef} style={{ border: "1px solid black" }}></canvas>
-                    <br />
-                    <button onClick={() => downloadTicket("png")}>Download PNG</button>
-                    <button onClick={() => downloadTicket("jpg")}>Download JPG</button>
-                    <button onClick={() => downloadTicket("pdf")}>Download PDF</button>
-                </>
-            )}
+            <div
+                ref={qrCodeContainer}
+                style={{
+                    margin: "20px auto",
+                    padding: "10px",
+                    width: `${options.width}px`,
+                    height: `${options.height}px`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1px solid #ccc"
+                }}
+            ></div>
+            <button onClick={() => downloadQR("png")}>Download PNG</button>
+            <button onClick={() => downloadQR("svg")}>Download SVG</button>
         </div>
     );
 };

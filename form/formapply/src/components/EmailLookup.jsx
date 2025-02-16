@@ -3,7 +3,7 @@ import QRCodeGenerator from "./QRCodeGenerator";
 import ResponseDisplay from "./ResponseDisplay";
 import EmailInput from "./EmailInput";
 import encodeBase64 from "./Encoder";
-import splitStringToJson from "./splitter";
+import splitStringToJson from "./Splitter";
 import QRTicketGenerator from "./Ticket";
 
 

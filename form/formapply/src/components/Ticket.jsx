@@ -4,7 +4,7 @@ const qrSize = 680;
 const qrPositionX = 3020;
 const qrPositionY = 230;
 
-const QRTicketGenerator = ({ qrImage }) => {
+const Ticket = ({ qrImage }) => {
     const ticketCanvasRef = useRef(null);
     const [ticketReady, setTicketReady] = useState(false);
 
@@ -77,4 +77,4 @@ const QRTicketGenerator = ({ qrImage }) => {
     );
 };
 
-export default QRTicketGenerator;
+export default Ticket;

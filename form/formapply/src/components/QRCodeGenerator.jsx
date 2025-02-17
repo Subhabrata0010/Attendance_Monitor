@@ -52,7 +52,7 @@ const QRCodeGenerator = ({ data, setQrImage }) => {
         },
         cornersSquareOptions: { type: cornerSquareStyle, color: gradStartColor },
         cornersDotOptions: { type: cornerDotStyle, color: gradEndColor },
-        imageOptions: { crossOrigin: "anonymous", margin: 10 },
+        imageOptions: { crossOrigin: "anonymous", margin: 5 },
         qrOptions: { errorCorrectionLevel: "H" },
     });
 
@@ -106,7 +106,7 @@ const QRCodeGenerator = ({ data, setQrImage }) => {
                 }}
             ></div>
             <button onClick={() => downloadQR("png")}>Download PNG</button>
-            <button onClick={() => downloadQR("svg")}>Download SVG</button>
+            <button onClick={() => downloadQR("jpg")}>Download JPG</button>
         </div>
     );
 };
